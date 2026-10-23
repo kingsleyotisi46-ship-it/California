@@ -122,7 +122,7 @@ app.post('/api/webhooks/unit',(req,res)=>{
 });
 app.use('/api',(req,res)=>res.status(404).json({error:'NOT_FOUND',requestId:req.requestId}));
 app.use(express.static(path.join(process.cwd(),'public'),{index:'index.html',maxAge:production?'1h':0,etag:true}));
-app.get('*',(_req,res)=>res.sendFile(path.join(process.cwd(),'public','index.html')));
+app.get('/{*path}',(_req,res)=>res.sendFile(path.join(process.cwd(),'public','index.html')));
 app.use((err,req,res,_next)=>{
   if(err instanceof z.ZodError)return res.status(400).json({error:'INVALID_REQUEST',issues:err.issues.map(i=>({path:i.path,code:i.code}))});
   if(err&&err.type==='entity.parse.failed')return res.status(400).json({error:'INVALID_JSON'});
