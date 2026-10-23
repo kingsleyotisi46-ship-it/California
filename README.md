@@ -11,13 +11,13 @@ California Bank is being migrated from a static preview-only interface to a Node
 - Money movement intentionally disabled. Approved program credentials, onboarding/KYC, provider payment endpoints, webhook signature verification, and reconciliation must be implemented and tested before enabling money movement.
 - No fake customer records, sample balances, fake card numbers, or simulated successful transfers are seeded.
 
-## Deploy to Render
+## Deploy to Render with Neon
 
-1. Push this repository to GitHub.
-2. In Render, create a new Blueprint from this repository and review render.yaml.
-3. Set APP_ORIGIN to the deployed HTTPS origin. Keep UNIT_PROGRAM_ENABLED=false until Unit and its partner bank approve the program and the integration passes compliance and security review.
-4. Store provider secrets only in Render's secret environment settings. Never commit API tokens or production customer data.
-5. Verify /healthz, authentication, session persistence, migration logs, and backup/restore procedures.
+1. In Render, create a new Blueprint from this repository and review render.yaml.
+2. Open the California Bank web service in Render → Environment and set `DATABASE_URL` to the connection string copied from Neon Console → California Bank → Connect. Choose the `main` branch and `california_bank` database. Use the pooled connection string where appropriate, keep `sslmode=require`, and never commit this secret to GitHub or put it in frontend JavaScript.
+3. Set `APP_ORIGIN` to the deployed HTTPS origin. Keep `UNIT_PROGRAM_ENABLED=false` until Unit and its partner bank approve the program and the integration passes compliance and security review.
+4. Render generates `SESSION_SECRET` for the service. Store all provider secrets only in Render's secret environment settings.
+5. Deploy and verify `/healthz`, authentication, session persistence, migration logs, and backup/restore procedures. The `preDeployCommand` runs the SQL migrations against the configured Neon database.
 
 ## Local development
 
