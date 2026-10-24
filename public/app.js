@@ -50,10 +50,10 @@ async function refreshBankingData(){
  }).join(''):'<div class="empty">No provider-confirmed transactions are available yet. Your activity will appear here after the provider confirms it.</div>';
 }
 function showPage(page){
- const pages={overview:$('#overview-page'),profile:$('#profile-page'),activity:$('#activity-page'),transfers:$('#transfers-page'),support:$('#support-page')};
+ const pages={overview:$('#overview-page'),profile:$('#profile-page'),activity:$('#activity-page'),transfers:$('#transfers-page'),cards:$('#cards-page'),loans:$('#loans-page'),bills:$('#bills-page'),topup:$('#topup-page'),support:$('#support-page')};
  Object.entries(pages).forEach(([key,el])=>{el.hidden=key!==page;});
  document.querySelectorAll('[data-page]').forEach(btn=>{const active=btn.dataset.page===page;btn.classList.toggle('nav-active',active);btn.setAttribute('aria-current',active?'page':'false');});
- const titles={overview:'Welcome to your dashboard',profile:'My profile',activity:'Account activity',transfers:'Transfers',support:'Help & support'};
+ const titles={overview:'Welcome to your dashboard',profile:'My profile',activity:'Account activity',transfers:'Transfers',cards:'Cards',loans:'Loans',bills:'Utility bills',topup:'Mobile top-up',support:'Help & support'};
  document.querySelector('.topbar h1').textContent=titles[page]||titles.overview;
 }
 async function loadAccount(){
