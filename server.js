@@ -33,7 +33,7 @@ app.use(helmet({ contentSecurityPolicy: { directives: {
   formAction:["'self'"], upgradeInsecureRequests: production ? [] : null
 }}, crossOriginEmbedderPolicy:false }));
 app.use('/api/webhooks/unit', express.raw({ type:['application/json','application/vnd.api+json'], limit:'1mb' }));
-app.use(express.json({ limit:'32kb', strict:true }));
+app.use(express.json({ limit:'2mb', strict:true }));
 app.use((req,res,next) => {
   req.requestId = crypto.randomUUID(); res.setHeader('X-Request-Id',req.requestId);
   if (req.method !== 'GET' && req.method !== 'HEAD' && req.path.startsWith('/api/')) {
@@ -63,7 +63,7 @@ async function audit(userId,eventType,req,metadata={}){
   await pool.query('INSERT INTO security_audit_events(user_id,event_type,request_id,metadata) VALUES($1,$2,$3,$4)',
     [userId||null,eventType,req.requestId,JSON.stringify(metadata)]);
 }
-function publicUser(row){return{id:row.id,email:row.email,status:row.status,emailVerified:Boolean(row.email_verified_at),firstName:row.first_name||null,middleName:row.middle_name||null,lastName:row.last_name||null,phoneNumber:row.phone_number||null,accountNumber:row.account_number||null};}
+function publicUser(row){return{id:row.id,email:row.email,status:row.status,emailVerified:Boolean(row.email_verified_at),firstName:row.first_name||null,middleName:row.middle_name||null,lastName:row.last_name||null,phoneNumber:row.phone_number||null,accountNumber:row.account_number||null,profileImage:row.profile_image||null};}
 function rotateSession(req,userId){
   return new Promise((resolve,reject)=>req.session.regenerate(err=>{
     if(err)return reject(err);req.session.userId=userId;req.session.csrfToken=crypto.randomBytes(32).toString('base64url');resolve();
@@ -115,7 +115,7 @@ app.post('/api/auth/login',authLimiter,requireCsrf,asyncRoute(async(req,res)=>{
   res.setHeader('Cache-Control','no-store').json({user:publicUser(user),csrfToken:req.session.csrfToken});
 }));
 app.get('/api/auth/me',requireUser,asyncRoute(async(req,res)=>{
-  const result=await pool.query('SELECT id,email,status,email_verified_at,first_name,middle_name,last_name,phone_number,account_number FROM app_users WHERE id=$1',[req.session.userId]);
+  const result=await pool.query('SELECT id,email,status,email_verified_at,first_name,middle_name,last_name,phone_number,account_number,profile_image FROM app_users WHERE id=$1',[req.session.userId]);
   if(!result.rowCount||result.rows[0].status!=='active')return req.session.destroy(()=>res.status(401).json({error:'AUTHENTICATION_REQUIRED'}));
   res.setHeader('Cache-Control','no-store').json({user:publicUser(result.rows[0]),csrfToken:csrf(req)});
 }));
@@ -140,6 +140,68 @@ app.get('/api/transactions',requireUser,asyncRoute(async(req,res)=>{
   const result=await pool.query('SELECT t.id,t.account_id,t.amount_cents,t.currency,t.direction,t.status,t.description,t.effective_at FROM bank_transactions t WHERE t.user_id=$1 ORDER BY t.effective_at DESC NULLS LAST,t.created_at DESC LIMIT $2',[req.session.userId,limit]);
   res.setHeader('Cache-Control','no-store').json({transactions:result.rows});
 }));
+
+const profileSchema=z.object({firstName:z.string().trim().min(1).max(80).regex(/^[\\p{L}\\p{M} .'-]+$/u),middleName:z.string().trim().max(80).regex(/^[\\p{L}\\p{M} .'-]*$/u).optional().default(''),lastName:z.string().trim().min(1).max(80).regex(/^[\\p{L}\\p{M} .'-]+$/u),phoneNumber:z.string().trim().min(7).max(20).regex(/^\\+?[0-9 ()-]+$/)}).strict();
+app.patch('/api/profile',requireUser,requireCsrf,asyncRoute(async(req,res)=>{
+ const input=profileSchema.parse(req.body);
+ const result=await pool.query('UPDATE app_users SET first_name=$2,middle_name=$3,last_name=$4,phone_number=$5,updated_at=now() WHERE id=$1 RETURNING id,email,status,email_verified_at,first_name,middle_name,last_name,phone_number,account_number,profile_image',[req.session.userId,input.firstName,input.middleName||null,input.lastName,input.phoneNumber]);
+ await audit(req.session.userId,'profile.updated',req);
+ res.setHeader('Cache-Control','no-store').json({user:publicUser(result.rows[0])});
+}));
+app.put('/api/profile/image',requireUser,requireCsrf,asyncRoute(async(req,res)=>{
+ const image=req.body?.image;
+ if(image!==null&&(typeof image!=='string'||image.length>1400000||!/^data:image\\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(image)))return res.status(400).json({error:'INVALID_PROFILE_IMAGE',message:'Choose a PNG, JPEG, or WebP image smaller than 1 MB.'});
+ if(typeof image==='string'&&Buffer.from(image.split(',')[1],'base64').length>1024*1024)return res.status(413).json({error:'PROFILE_IMAGE_TOO_LARGE'});
+ const result=await pool.query('UPDATE app_users SET profile_image=$2,updated_at=now() WHERE id=$1 RETURNING id,email,status,email_verified_at,first_name,middle_name,last_name,phone_number,account_number,profile_image',[req.session.userId,image]);
+ await audit(req.session.userId,image?'profile.image_updated':'profile.image_removed',req);
+ res.setHeader('Cache-Control','no-store').json({user:publicUser(result.rows[0])});
+}));
+async function ensureVirtualWallet(userId,client=pool){await client.query("INSERT INTO virtual_wallets(user_id,balance_cents,currency) VALUES($1,0,'USD') ON CONFLICT(user_id) DO NOTHING",[userId]);}
+app.get('/api/virtual/wallet',requireUser,asyncRoute(async(req,res)=>{
+ await ensureVirtualWallet(req.session.userId);
+ const [wallet,tx]=await Promise.all([pool.query('SELECT balance_cents,currency,updated_at FROM virtual_wallets WHERE user_id=$1',[req.session.userId]),pool.query('SELECT id,kind,direction,amount_cents,currency,description,reference,counterparty_account_number,created_at FROM virtual_transactions WHERE user_id=$1 ORDER BY created_at DESC,id DESC LIMIT 50',[req.session.userId])]);
+ res.setHeader('Cache-Control','no-store').json({mode:'virtual',wallet:wallet.rows[0],transactions:tx.rows});
+}));
+const virtualAmountSchema=z.object({amount:z.number().int().min(100).max(100000000),idempotencyKey:z.string().uuid()}).strict();
+app.post('/api/virtual/fund',requireUser,requireCsrf,asyncRoute(async(req,res)=>{
+ const input=virtualAmountSchema.parse(req.body),userId=req.session.userId,client=await pool.connect();
+ try{await client.query('BEGIN');
+ const previous=await client.query('SELECT id FROM virtual_transactions WHERE user_id=$1 AND idempotency_key=$2',[userId,input.idempotencyKey]);
+ if(previous.rowCount){await client.query('COMMIT');return res.status(200).json({alreadyProcessed:true,message:'This virtual-funds request was already processed. Refresh the wallet.'});}
+ await ensureVirtualWallet(userId,client);
+ const wallet=(await client.query('UPDATE virtual_wallets SET balance_cents=balance_cents+$2,updated_at=now() WHERE user_id=$1 RETURNING balance_cents,currency',[userId,input.amount])).rows[0];
+ const reference=crypto.randomUUID();
+ await client.query("INSERT INTO virtual_transactions(user_id,kind,direction,amount_cents,currency,description,reference,idempotency_key) VALUES($1,'virtual_funding','credit',$2,'USD','Simulated virtual funds',$3,$4)",[userId,input.amount,reference,input.idempotencyKey]);
+ await audit(userId,'virtual.funds_added',req,{amountCents:input.amount,reference});await client.query('COMMIT');
+ res.status(201).setHeader('Cache-Control','no-store').json({mode:'virtual',wallet,reference,message:'Virtual funds added. This is simulated money and has no real-world value.'});
+ }catch(e){await client.query('ROLLBACK').catch(()=>{});throw e;}finally{client.release();}
+}));
+const virtualTransferSchema=z.object({accountNumber:z.string().regex(/^[0-9]{11}$/),amount:z.number().int().min(100).max(100000000),idempotencyKey:z.string().uuid(),description:z.string().trim().max(120).optional().default('Virtual account transfer')}).strict();
+app.post('/api/virtual/transfer',requireUser,requireCsrf,asyncRoute(async(req,res)=>{
+ const input=virtualTransferSchema.parse(req.body),sender=req.session.userId;
+ const recipientResult=await pool.query('SELECT id,first_name,last_name,account_number FROM app_users WHERE account_number=$1 AND status=$2',[input.accountNumber,'active']);
+ if(!recipientResult.rowCount)return res.status(404).json({error:'RECIPIENT_NOT_FOUND',message:'No active account matches that account number.'});
+ const recipient=recipientResult.rows[0];if(recipient.id===sender)return res.status(400).json({error:'SELF_TRANSFER_NOT_ALLOWED',message:'Choose another account number.'});
+ const client=await pool.connect();
+ try{await client.query('BEGIN');
+ const previous=await client.query('SELECT id FROM virtual_transactions WHERE user_id=$1 AND idempotency_key=$2',[sender,input.idempotencyKey]);
+ if(previous.rowCount){await client.query('COMMIT');return res.status(200).json({alreadyProcessed:true,message:'This transfer request was already processed. Refresh activity before trying again.'});}
+ await ensureVirtualWallet(sender,client);await ensureVirtualWallet(recipient.id,client);
+ const ids=[sender,recipient.id].sort();
+ const locked=await client.query('SELECT user_id,balance_cents FROM virtual_wallets WHERE user_id=ANY($1::uuid[]) ORDER BY user_id FOR UPDATE',[ids]);
+ const senderWallet=locked.rows.find(w=>w.user_id===sender);
+ if(!senderWallet||BigInt(senderWallet.balance_cents)<BigInt(input.amount)){await client.query('ROLLBACK');return res.status(400).json({error:'INSUFFICIENT_VIRTUAL_FUNDS',message:'Your virtual wallet does not have enough available funds.'});}
+ const reference=crypto.randomUUID();
+ await client.query('UPDATE virtual_wallets SET balance_cents=balance_cents-$2,updated_at=now() WHERE user_id=$1',[sender,input.amount]);
+ await client.query('UPDATE virtual_wallets SET balance_cents=balance_cents+$2,updated_at=now() WHERE user_id=$1',[recipient.id,input.amount]);
+ await client.query("INSERT INTO virtual_transactions(user_id,kind,direction,amount_cents,currency,description,reference,idempotency_key,counterparty_account_number) VALUES($1,'account_transfer','debit',$2,'USD',$3,$4,$5,$6),($7,'account_transfer','credit',$2,'USD',$3,$4,$8,$9)",[sender,input.amount,input.description,reference,input.idempotencyKey,input.accountNumber,recipient.id,crypto.randomUUID(),recipient.account_number]);
+ const wallet=(await client.query('SELECT balance_cents,currency FROM virtual_wallets WHERE user_id=$1',[sender])).rows[0];
+ await audit(sender,'virtual.transfer_sent',req,{amountCents:input.amount,reference,recipientAccountNumber:input.accountNumber});await audit(recipient.id,'virtual.transfer_received',req,{amountCents:input.amount,reference});
+ await client.query('COMMIT');
+ res.status(201).setHeader('Cache-Control','no-store').json({mode:'virtual',wallet,reference,recipient:{name:[recipient.first_name,recipient.last_name].filter(Boolean).join(' ')||'California Bank customer',accountNumber:input.accountNumber},message:'Virtual transfer completed. No real money moved.'});
+ }catch(e){await client.query('ROLLBACK').catch(()=>{});throw e;}finally{client.release();}
+}));
+
 app.post('/api/transfers',requireUser,requireCsrf,asyncRoute(async(req,res)=>{
   await audit(req.session.userId,'banking.transfer_blocked',req,{reason:'provider_program_not_enabled'});
   res.status(503).json({error:'BANKING_PROGRAM_NOT_READY',message:'Transfers are unavailable until the approved banking provider integration is enabled and verified.'});
