@@ -1,7 +1,7 @@
 'use strict';
 let csrfToken='';let mode='login';
 const $=s=>document.querySelector(s);
-const authView=$('#auth-view');const accountView=$('#account-view');const form=$('#auth-form');const notice=$('#notice');const logout=$('#logout');
+const authView=$('#auth-view');const accountView=$('#account-view');const form=$('#auth-form');const notice=$('#notice');const logout=$('#logout');let currentUser=null;
 async function api(path,options={}){
  const headers={'Content-Type':'application/json',...(options.headers||{})};
  if(csrfToken&&!['GET','HEAD'].includes((options.method||'GET').toUpperCase()))headers['X-CSRF-Token']=csrfToken;
@@ -49,10 +49,23 @@ async function refreshBankingData(){
    return '<div class="data-row"><span><strong>'+escapeHtml(t.description||'Bank transaction')+'</strong><small>'+escapeHtml(t.effective_at?new Date(t.effective_at).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'}):'Date pending')+' · '+escapeHtml(t.status||'Confirmed')+'</small></span><span class="amount '+(credit?'credit':'')+'">'+(credit?'+':'−')+escapeHtml(money(t.amount_cents,t.currency))+'</span></div>';
  }).join(''):'<div class="empty">No provider-confirmed transactions are available yet. Your activity will appear here after the provider confirms it.</div>';
 }
+function showPage(page){
+ const pages={overview:$('#overview-page'),profile:$('#profile-page'),activity:$('#activity-page'),transfers:$('#transfers-page'),support:$('#support-page')};
+ Object.entries(pages).forEach(([key,el])=>{el.hidden=key!==page;});
+ document.querySelectorAll('[data-page]').forEach(btn=>{const active=btn.dataset.page===page;btn.classList.toggle('nav-active',active);btn.setAttribute('aria-current',active?'page':'false');});
+ const titles={overview:'Welcome to your dashboard',profile:'My profile',activity:'Account activity',transfers:'Transfers',support:'Help & support'};
+ document.querySelector('.topbar h1').textContent=titles[page]||titles.overview;
+}
 async function loadAccount(){
- const {user}=await api('/api/auth/me');
+ const {user}=await api('/api/auth/me');currentUser=user;
  authView.hidden=true;accountView.hidden=false;logout.hidden=false;
  $('#account-email').textContent=user.email;
+ $('#profile-name').textContent=[user.firstName,user.middleName,user.lastName].filter(Boolean).join(' ')||'Not provided';
+ $('#profile-email').textContent=user.email||'—';
+ $('#profile-phone').textContent=user.phoneNumber||'Not provided';
+ $('#profile-account-number').textContent=user.accountNumber||'Not assigned';
+ $('#profile-status').textContent=user.status||'Unknown';
+ showPage('overview');
  const s=await api('/api/banking/status');
  const ready=Boolean(s.providerConfigured&&s.programEnabled&&s.onboardingStatus==='approved');
  $('#bank-status-title').textContent=ready?'Banking provider connected':'Banking setup pending';
@@ -61,7 +74,7 @@ async function loadAccount(){
  $('#bank-status-text').textContent=s.message;
  await refreshBankingData();
 }
-function showAuth(){accountView.hidden=true;authView.hidden=false;logout.hidden=true;}
+function showAuth(){accountView.hidden=true;authView.hidden=false;logout.hidden=true;currentUser=null;}
 form.addEventListener('submit',async e=>{
  e.preventDefault();const button=$('#submit');button.disabled=true;showNotice('');
  try{
@@ -77,6 +90,23 @@ form.addEventListener('submit',async e=>{
   showNotice(err.status===409?'An account with this email already exists. Sign in instead.':err.status===401?'Email or password is incorrect.':err.status===400?'Check your details, make sure passwords match, and use at least 12 password characters.':'We could not complete this request. Please try again.',true);
  }finally{button.disabled=false;}
 });
+document.querySelectorAll('[data-page]').forEach(btn=>btn.addEventListener('click',async()=>{
+ if(!currentUser)return;
+ showPage(btn.dataset.page);
+ if(btn.dataset.page==='activity'){
+  const target=$('#activity-transactions');
+  target.innerHTML=$('#transactions').innerHTML;
+  try{await refreshBankingData();target.innerHTML=$('#transactions').innerHTML;}
+  catch(_){renderEmpty(target,'Unable to load confirmed activity. Please try again.');}
+ }
+}));
+async function refreshActivityPage(){
+ const button=$('#activity-refresh');button.disabled=true;
+ try{await refreshBankingData();$('#activity-transactions').innerHTML=$('#transactions').innerHTML;}
+ catch(_){renderEmpty($('#activity-transactions'),'Unable to load confirmed activity. Please try again.');}
+ finally{button.disabled=false;}
+}
+$('#activity-refresh').addEventListener('click',refreshActivityPage);
 $('#toggle-mode').addEventListener('click',()=>setMode(mode==='login'?'register':'login'));
 logout.addEventListener('click',async()=>{
  try{await api('/api/auth/logout',{method:'POST',body:'{}'});}catch(_){}
