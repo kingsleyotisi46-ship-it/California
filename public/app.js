@@ -13,10 +13,22 @@ async function api(path,options={}){
 }
 function showNotice(message,isError=false){notice.hidden=!message;notice.textContent=message||'';notice.classList.toggle('error',isError);}
 function setMode(next){
- mode=next;$('#auth-title').textContent=mode==='login'?'Welcome back':'Create your account';
+ mode=next;
+ $('#auth-title').textContent=mode==='login'?'Welcome back':'Create your account';
+ $('.auth-content > .muted').textContent=mode==='login'?'Sign in to securely access your account.':'Open your California Bank profile with your real details.';
  $('#submit').innerHTML=(mode==='login'?'Sign in securely':'Create account')+' <span aria-hidden="true">→</span>';
  $('#password').autocomplete=mode==='login'?'current-password':'new-password';
- $('#toggle-mode').textContent=mode==='login'?'Create an account':'Sign in';showNotice('');
+ $('#profile-fields').hidden=mode==='login';
+ $('#confirm-field').hidden=mode==='login';
+ $('#terms-field').hidden=mode==='login';
+ $('#first-name').required=mode==='register';
+ $('#last-name').required=mode==='register';
+ $('#phone-number').required=mode==='register';
+ $('#confirm-password').required=mode==='register';
+ $('#terms-accepted').required=mode==='register';
+ $('#email').autocomplete='email';
+ $('#toggle-mode').textContent=mode==='login'?'Create an account':'Sign in';
+ showNotice('');
 }
 function escapeHtml(value){return String(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
 function money(cents,currency='USD'){
@@ -53,10 +65,16 @@ function showAuth(){accountView.hidden=true;authView.hidden=false;logout.hidden=
 form.addEventListener('submit',async e=>{
  e.preventDefault();const button=$('#submit');button.disabled=true;showNotice('');
  try{
-  const result=await api('/api/auth/'+(mode==='login'?'login':'register'),{method:'POST',body:JSON.stringify({email:$('#email').value.trim(),password:$('#password').value})});
-  csrfToken=result.csrfToken;$('#password').value='';await loadAccount();
+  const payload={email:$('#email').value.trim(),password:$('#password').value};
+  if(mode==='register'){
+   if(payload.password!==$('#confirm-password').value){showNotice('Your passwords do not match.',true);return;}
+   if(!$('#terms-accepted').checked){showNotice('Please read and accept the Terms of Service and Privacy Policy.',true);return;}
+   Object.assign(payload,{firstName:$('#first-name').value.trim(),middleName:$('#middle-name').value.trim(),lastName:$('#last-name').value.trim(),phoneNumber:$('#phone-number').value.trim(),confirmPassword:$('#confirm-password').value,termsAccepted:true});
+  }
+  const result=await api('/api/auth/'+(mode==='login'?'login':'register'),{method:'POST',body:JSON.stringify(payload)});
+  csrfToken=result.csrfToken;form.reset();await loadAccount();
  }catch(err){
-  showNotice(err.status===409?'An account with this email already exists. Sign in instead.':err.status===401?'Email or password is incorrect.':err.status===400?'Check your email and use a password of at least 12 characters.':'We could not complete this request. Please try again.',true);
+  showNotice(err.status===409?'An account with this email already exists. Sign in instead.':err.status===401?'Email or password is incorrect.':err.status===400?'Check your details, make sure passwords match, and use at least 12 password characters.':'We could not complete this request. Please try again.',true);
  }finally{button.disabled=false;}
 });
 $('#toggle-mode').addEventListener('click',()=>setMode(mode==='login'?'register':'login'));
