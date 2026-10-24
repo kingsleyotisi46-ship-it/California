@@ -150,7 +150,7 @@ app.patch('/api/profile',requireUser,requireCsrf,asyncRoute(async(req,res)=>{
 }));
 app.put('/api/profile/image',requireUser,requireCsrf,asyncRoute(async(req,res)=>{
  const image=req.body?.image;
- if(image!==null&&(typeof image!=='string'||image.length>1400000||!/^data:image\\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(image)))return res.status(400).json({error:'INVALID_PROFILE_IMAGE',message:'Choose a PNG, JPEG, or WebP image smaller than 1 MB.'});
+ if(image!==null&&(typeof image!=='string'||image.length>1400000||!(image.startsWith('data:image/png;base64,')||image.startsWith('data:image/jpeg;base64,')||image.startsWith('data:image/webp;base64,'))||!/^[A-Za-z0-9+/]+={0,2}$/.test(image.split(',')[1]||'')))return res.status(400).json({error:'INVALID_PROFILE_IMAGE',message:'Choose a PNG, JPEG, or WebP image smaller than 1 MB.'});
  if(typeof image==='string'&&Buffer.from(image.split(',')[1],'base64').length>1024*1024)return res.status(413).json({error:'PROFILE_IMAGE_TOO_LARGE'});
  const result=await pool.query('UPDATE app_users SET profile_image=$2,updated_at=now() WHERE id=$1 RETURNING id,email,status,email_verified_at,first_name,middle_name,last_name,phone_number,account_number,profile_image',[req.session.userId,image]);
  await audit(req.session.userId,image?'profile.image_updated':'profile.image_removed',req);
