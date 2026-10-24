@@ -139,9 +139,23 @@ app.post('/api/webhooks/unit',asyncRoute(async(req,res)=>{
     const eventId=String(event.id||'').trim(),eventType=String(event.type||'').trim();
     if(!eventId||!eventType||eventId.length>255||eventType.length>255)
       return res.status(400).json({error:'WEBHOOK_EVENT_ID_AND_TYPE_REQUIRED'});
+    const safeAttributes={};
+    for(const key of ['createdAt','amount','direction','balance','available','summary','status','previousStatus','type','currency','depositProduct']){
+      if(event.attributes&&Object.prototype.hasOwnProperty.call(event.attributes,key))safeAttributes[key]=event.attributes[key];
+    }
+    const safeRelationships={};
+    for(const key of ['account','customer','transaction','application']){
+      const relation=event.relationships?.[key]?.data;
+      if(relation){
+        safeRelationships[key]=Array.isArray(relation)
+          ? relation.map(item=>({id:String(item.id||''),type:String(item.type||'')}))
+          : {id:String(relation.id||''),type:String(relation.type||'')};
+      }
+    }
+    const safePayload={id:eventId,type:eventType,attributes:safeAttributes,relationships:safeRelationships};
     const saved=await pool.query(
-      'INSERT INTO provider_webhook_events(provider,provider_event_id,event_type) VALUES($1,$2,$3) ON CONFLICT(provider,provider_event_id) DO NOTHING RETURNING provider_event_id',
-      ['unit',eventId,eventType]);
+      'INSERT INTO provider_webhook_events(provider,provider_event_id,event_type,payload) VALUES($1,$2,$3,$4::jsonb) ON CONFLICT(provider,provider_event_id) DO NOTHING RETURNING provider_event_id',
+      ['unit',eventId,eventType,JSON.stringify(safePayload)]);
     if(saved.rowCount){accepted++;await audit(null,'provider.unit.webhook_received',req,{eventId,eventType});}
     else duplicates++;
   }
