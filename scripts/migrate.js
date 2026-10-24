@@ -4,8 +4,11 @@ const path = require('node:path');
 const { Client } = require('pg');
 async function main() {
   if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is required');
-  const client = new Client({ connectionString: process.env.DATABASE_URL,
-    ssl: process.env.DATABASE_URL.includes('localhost') ? false : { rejectUnauthorized: true } });
+  const databaseUrl = new URL(process.env.DATABASE_URL);
+  const localDatabase = ['localhost','127.0.0.1','::1'].includes(databaseUrl.hostname);
+  if (!localDatabase) databaseUrl.searchParams.set('sslmode', 'verify-full');
+  const client = new Client({ connectionString: databaseUrl.toString(),
+    ssl: localDatabase ? false : { rejectUnauthorized: true } });
   await client.connect();
   try {
     await client.query('SELECT pg_advisory_lock($1)', [724061023]);
