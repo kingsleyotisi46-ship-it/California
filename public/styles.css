@@ -86,3 +86,14 @@ footer i{font-style:normal;padding:0 4px}
 @media(max-width:900px){.sidebar{width:205px;padding:25px 14px}.main-content{margin-left:205px;padding:30px 24px 22px}.auth-card{grid-template-columns:.7fr 1fr}.auth-art{min-height:430px}}
 @media(max-width:680px){.sidebar{position:relative;width:auto;height:auto;padding:14px 18px;display:block}.brand{padding:0;gap:10px}.brand-mark{width:39px;height:39px;font-size:23px;border-radius:11px}.brand strong{font-size:12px}.brand small{font-size:10px}.sidebar-caption,.nav-item,.sidebar-note,.sidebar-bottom{display:none}.main-content{margin-left:0;padding:25px 17px 20px}.topbar{align-items:flex-start;margin-bottom:26px}.topbar h1{font-size:26px}.subtitle{font-size:14px}.secondary{padding:10px 11px;font-size:12px}.auth-card{grid-template-columns:1fr;margin:0 auto}.auth-art{min-height:155px}.art-monogram{width:76px;height:76px;border-radius:22px;font-size:50px}.auth-art:after{width:200px;height:200px}.orbit-one{width:260px;height:100px}.orbit-two{width:280px;height:125px}.auth-content{padding:25px 22px 28px}.welcome-row{align-items:flex-start}.welcome-row h2{font-size:25px}.secure-pill{font-size:0;padding:8px}.secure-pill .secure-icon{width:22px;height:22px}.status-panel{padding:17px;gap:12px;margin-bottom:29px}.status-icon{width:36px;height:36px;font-size:20px}.status-heading strong{font-size:14px}.status-copy p{font-size:13px}.accounts-grid{grid-template-columns:1fr}.account-tile{padding:20px}.account-balance{font-size:27px}.transactions-title{margin-top:30px}.transactions-card{padding:0 14px}.data-row{gap:12px}.data-row strong{font-size:13px}.amount{font-size:13px}footer{font-size:11px;margin-top:32px}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+/* Customer registration fields */
+.profile-fields[hidden],#confirm-field[hidden],#terms-field[hidden]{display:none!important}
+.profile-fields{margin-bottom:2px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.optional{font-weight:400;color:#77849a;font-size:.82em}
+.field-help{margin:-8px 0 14px;color:#77849a;font-size:.82rem}
+.terms-field{margin:14px 0 18px}
+.terms-label{display:flex;align-items:flex-start;gap:10px;font-weight:400;line-height:1.5}
+.terms-label input{width:17px;height:17px;flex:0 0 17px;margin-top:3px;accent-color:#bd984b}
+.terms-label a{color:#a17a2d;text-decoration:underline}
+@media(max-width:560px){.form-grid{grid-template-columns:1fr;gap:0}}
