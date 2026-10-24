@@ -2,6 +2,6 @@
   "name":"california-bank","version":"1.0.0","private":true,
   "description":"California Bank secure banking application",
   "engines":{"node":">=22"},
-  "scripts":{"start":"node server.js","migrate":"node scripts/migrate.js","prestart":"npm run migrate","check":"node --check server.js && node --check scripts/migrate.js"},
+  "scripts":{"start":"node server.js","migrate":"node scripts/migrate.js","prestart":"npm run migrate","check":"node --check server.js && node --check scripts/migrate.js && node --check public/app.js"},
   "dependencies":{"argon2":"^0.44.0","connect-pg-simple":"^10.0.0","express":"^5.1.0","express-rate-limit":"^8.1.0","express-session":"^1.18.2","helmet":"^8.1.0","pg":"^8.16.3","zod":"^4.1.12"}
 }
