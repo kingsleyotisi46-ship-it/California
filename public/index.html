@@ -14,7 +14,13 @@
 <aside class="sidebar" aria-label="Main navigation">
 <a class="brand" href="/" aria-label="California Bank home"><span class="brand-mark" aria-hidden="true">C</span><span><strong>CALIFORNIA</strong><small>BANK</small></span></a>
 <div class="sidebar-caption">YOUR MONEY</div>
-<div class="nav-item nav-active"><span aria-hidden="true">▦</span> Overview</div>
+<nav class="side-nav" aria-label="Account pages">
+<button class="nav-item nav-active" type="button" data-page="overview"><span aria-hidden="true">▦</span> Overview</button>
+<button class="nav-item" type="button" data-page="profile"><span aria-hidden="true">♙</span> My profile</button>
+<button class="nav-item" type="button" data-page="activity"><span aria-hidden="true">↕</span> Activity</button>
+<button class="nav-item" type="button" data-page="transfers"><span aria-hidden="true">⇄</span> Transfers</button>
+<button class="nav-item" type="button" data-page="support"><span aria-hidden="true">?</span> Help & support</button>
+</nav>
 <div class="sidebar-note"><span class="secure-icon" aria-hidden="true">✓</span><div><strong>Secure banking</strong><p>Your access is protected with encrypted sessions.</p></div></div>
 <div class="sidebar-bottom">USD · United States<br><span>California Bank secure access</span></div>
 </aside>
@@ -38,6 +44,29 @@
 <p class="switch">New to California Bank? <button id="toggle-mode" class="text-button" type="button">Create an account</button></p></div>
 </section>
 <section id="account-view" hidden>
+<div id="profile-page" class="page-panel" hidden>
+<div class="section-title"><div><p class="eyebrow">PERSONAL DETAILS</p><h2>My profile</h2></div></div>
+<div class="profile-card">
+<div class="profile-row"><span>Full name</span><strong id="profile-name">Not provided</strong></div>
+<div class="profile-row"><span>Email address</span><strong id="profile-email">—</strong></div>
+<div class="profile-row"><span>Phone number</span><strong id="profile-phone">Not provided</strong></div>
+<div class="profile-row"><span>Account number</span><strong id="profile-account-number">Not assigned</strong></div>
+<div class="profile-row"><span>Account status</span><strong id="profile-status">—</strong></div>
+<p class="field-help">For your security, profile changes are not available in this app yet. Contact verified bank support to update your details.</p>
+</div></div>
+<div id="activity-page" class="page-panel" hidden>
+<div class="section-title"><div><p class="eyebrow">ACCOUNT HISTORY</p><h2>Activity</h2><p class="muted">Provider-confirmed transactions only.</p></div><button id="activity-refresh" class="refresh-button" type="button">Refresh activity</button></div>
+<div id="activity-transactions" class="transactions-card"><div class="empty">Sign in to load account activity.</div></div>
+</div>
+<div id="transfers-page" class="page-panel" hidden>
+<div class="section-title"><div><p class="eyebrow">MONEY MOVEMENT</p><h2>Transfers</h2></div></div>
+<div class="status-panel"><div class="status-icon" aria-hidden="true">◷</div><div class="status-copy"><div class="status-heading"><strong>Transfers are not enabled</strong><span class="status-badge">PENDING</span></div><p>Transfers will become available only after a real banking provider is approved and its transaction, webhook, and reconciliation flows are verified. No money has been moved.</p></div></div>
+</div>
+<div id="support-page" class="page-panel" hidden>
+<div class="section-title"><div><p class="eyebrow">CUSTOMER CARE</p><h2>Help & support</h2></div></div>
+<div class="profile-card support-content"><h3>How can we help?</h3><p>For account access problems, use Sign out and sign in again, then refresh your account activity.</p><p>Never share your password, one-time passcodes, or full banking credentials in a support request.</p><p class="field-help">A verified customer-support channel has not been configured in this deployment. Do not send sensitive account details through unverified channels.</p></div>
+</div>
+<div id="overview-page" class="page-panel">
 <div class="welcome-row"><div><p class="eyebrow">ACCOUNT OVERVIEW</p><h2>Your banking</h2><p id="account-email" class="muted email-line"></p></div><div class="secure-pill"><span class="secure-icon">✓</span> Secure session</div></div>
 <div class="status-panel"><div class="status-icon" aria-hidden="true">◷</div><div class="status-copy"><div class="status-heading"><strong id="bank-status-title">Banking setup pending</strong><span id="bank-status-badge" class="status-badge">PENDING</span></div><p id="bank-status-text">Banking services appear after provider onboarding is approved.</p></div></div>
 <div class="section-title"><div><p class="eyebrow">YOUR PRODUCTS</p><h3>Accounts</h3></div><span class="section-meta" id="account-count">0 linked</span></div>
@@ -45,6 +74,7 @@
 <div class="section-title transactions-title"><div><p class="eyebrow">LATEST ACTIVITY</p><h3>Recent transactions</h3></div><button id="refresh" class="refresh-button" type="button"><span aria-hidden="true">↻</span> Refresh</button></div>
 <div id="transactions" class="transactions-card"><div class="empty">No provider-confirmed transactions available.</div></div>
 <p class="footnote"><span aria-hidden="true">ⓘ</span> Balances and transactions are displayed only when confirmed by the banking provider. No sample balances or simulated transfers are shown.</p>
+</div>
 </section>
 <footer><span>© California Bank</span><span>Secure access <i aria-hidden="true">·</i> USD accounts</span></footer>
 </main>
