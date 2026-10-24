@@ -19,6 +19,8 @@ services:
         sync: false
       - key: UNIT_API_TOKEN
         sync: false
+      - key: UNIT_WEBHOOK_SECRET
+        sync: false
       - key: UNIT_ENV
         value: sandbox
       - key: UNIT_PROGRAM_ENABLED
