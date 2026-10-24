@@ -19,6 +19,10 @@
 <button class="nav-item" type="button" data-page="profile"><span aria-hidden="true">♙</span> My profile</button>
 <button class="nav-item" type="button" data-page="activity"><span aria-hidden="true">↕</span> Activity</button>
 <button class="nav-item" type="button" data-page="transfers"><span aria-hidden="true">⇄</span> Transfers</button>
+<button class="nav-item" type="button" data-page="cards"><span aria-hidden="true">▰</span> Cards</button>
+<button class="nav-item" type="button" data-page="loans"><span aria-hidden="true">▤</span> Loans</button>
+<button class="nav-item" type="button" data-page="bills"><span aria-hidden="true">ϟ</span> Utility bills</button>
+<button class="nav-item" type="button" data-page="topup"><span aria-hidden="true">＋</span> Mobile top-up</button>
 <button class="nav-item" type="button" data-page="support"><span aria-hidden="true">?</span> Help & support</button>
 </nav>
 <div class="sidebar-note"><span class="secure-icon" aria-hidden="true">✓</span><div><strong>Secure banking</strong><p>Your access is protected with encrypted sessions.</p></div></div>
@@ -61,6 +65,26 @@
 <div id="transfers-page" class="page-panel" hidden>
 <div class="section-title"><div><p class="eyebrow">MONEY MOVEMENT</p><h2>Transfers</h2></div></div>
 <div class="status-panel"><div class="status-icon" aria-hidden="true">◷</div><div class="status-copy"><div class="status-heading"><strong>Transfers are not enabled</strong><span class="status-badge">PENDING</span></div><p>Transfers will become available only after a real banking provider is approved and its transaction, webhook, and reconciliation flows are verified. No money has been moved.</p></div></div>
+</div>
+<div id="cards-page" class="page-panel" hidden>
+<div class="section-title"><div><p class="eyebrow">PAYMENT PRODUCTS</p><h2>Cards</h2><p class="muted">Debit and virtual card services.</p></div></div>
+<div class="status-panel"><div class="status-icon" aria-hidden="true">▰</div><div class="status-copy"><div class="status-heading"><strong>Card issuance is not enabled</strong><span class="status-badge">NOT CONFIGURED</span></div><p>No card has been issued and no card number is available. Card creation, activation, freezing, and card transactions require an approved issuer and verified provider integration.</p></div></div>
+<div class="profile-card"><h3>Card services</h3><div class="service-list"><div class="service-row"><span>Virtual debit card</span><strong>Unavailable</strong></div><div class="service-row"><span>Physical debit card</span><strong>Unavailable</strong></div><div class="service-row"><span>Freeze or replace card</span><strong>Unavailable</strong></div></div></div>
+</div>
+<div id="loans-page" class="page-panel" hidden>
+<div class="section-title"><div><p class="eyebrow">BORROWING</p><h2>Loans</h2><p class="muted">Loan eligibility and repayment services.</p></div></div>
+<div class="status-panel"><div class="status-icon" aria-hidden="true">▤</div><div class="status-copy"><div class="status-heading"><strong>Loan applications are not enabled</strong><span class="status-badge">NOT CONFIGURED</span></div><p>There are no loan offers, eligibility decisions, or approvals available in this deployment. Lending requires a licensed lending partner, eligibility rules, disclosures, and an approved application workflow.</p></div></div>
+<div class="profile-card"><h3>Loan services</h3><div class="service-list"><div class="service-row"><span>Personal loan</span><strong>Unavailable</strong></div><div class="service-row"><span>Loan repayment</span><strong>Unavailable</strong></div><div class="service-row"><span>Application status</span><strong>Unavailable</strong></div></div></div>
+</div>
+<div id="bills-page" class="page-panel" hidden>
+<div class="section-title"><div><p class="eyebrow">PAYMENTS</p><h2>Utility bills</h2><p class="muted">Electricity, TV, and internet bill payments.</p></div></div>
+<div class="status-panel"><div class="status-icon" aria-hidden="true">ϟ</div><div class="status-copy"><div class="status-heading"><strong>Bill payments are not enabled</strong><span class="status-badge">NOT CONFIGURED</span></div><p>No biller has been connected. Payments will not be submitted and no receipt will be generated until a payment aggregator, biller catalogue, validation, and transaction-status verification are integrated.</p></div></div>
+<div class="profile-card"><h3>Available categories when configured</h3><div class="service-list"><div class="service-row"><span>Electricity tokens and bills</span><strong>Unavailable</strong></div><div class="service-row"><span>Cable and satellite TV</span><strong>Unavailable</strong></div><div class="service-row"><span>Internet subscriptions</span><strong>Unavailable</strong></div><div class="service-row"><span>Water and other utilities</span><strong>Unavailable</strong></div></div></div>
+</div>
+<div id="topup-page" class="page-panel" hidden>
+<div class="section-title"><div><p class="eyebrow">MOBILE SERVICES</p><h2>Mobile top-up</h2><p class="muted">Airtime and data bundles.</p></div></div>
+<div class="status-panel"><div class="status-icon" aria-hidden="true">＋</div><div class="status-copy"><div class="status-heading"><strong>Airtime and data are not enabled</strong><span class="status-badge">NOT CONFIGURED</span></div><p>Mobile operator products, phone-number validation, pricing, and provider transaction confirmation are not connected. No airtime or data purchase can be made yet.</p></div></div>
+<div class="profile-card"><h3>Mobile top-up services</h3><div class="service-list"><div class="service-row"><span>Airtime recharge</span><strong>Unavailable</strong></div><div class="service-row"><span>Mobile data bundles</span><strong>Unavailable</strong></div><div class="service-row"><span>Supported networks</span><strong>Not configured</strong></div></div></div>
 </div>
 <div id="support-page" class="page-panel" hidden>
 <div class="section-title"><div><p class="eyebrow">CUSTOMER CARE</p><h2>Help & support</h2></div></div>
