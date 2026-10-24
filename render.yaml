@@ -3,7 +3,7 @@ services:
     name: california-bank
     runtime: node
     plan: starter
-    buildCommand: npm install --omit=dev
+    buildCommand: npm install --omit=dev && npm run check
     preDeployCommand: npm run migrate
     startCommand: npm start
     healthCheckPath: /healthz
