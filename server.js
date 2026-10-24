@@ -18,8 +18,8 @@ if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is required');
 if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.length < 32) throw new Error('SESSION_SECRET must be at least 32 characters');
 if (production && (!appOrigin || !/^https:\/\//.test(appOrigin))) throw new Error('APP_ORIGIN must be the production HTTPS origin');
 
-const localDatabase = /localhost|127\.0\.0\.1/.test(new URL(process.env.DATABASE_URL).hostname);
 const databaseUrl = new URL(process.env.DATABASE_URL);
+const localDatabase = ['localhost','127.0.0.1','::1'].includes(databaseUrl.hostname);
 if (!localDatabase) databaseUrl.searchParams.set('sslmode', 'verify-full');
 const pool = new Pool({ connectionString: databaseUrl.toString(),
   ssl: localDatabase ? false : { rejectUnauthorized: true },
