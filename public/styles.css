@@ -122,3 +122,10 @@ footer i{font-style:normal;padding:0 4px}
  .profile-card{padding:18px}
  .profile-row{gap:12px;font-size:13px}
 }
+
+/* Product pages: clear status, responsive service rows */
+.service-list{display:grid;gap:0}
+.service-row{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:15px 0;border-bottom:1px solid var(--line);font-size:14px}
+.service-row:last-child{border-bottom:0}
+.service-row strong{font-size:12px;color:var(--muted);text-align:right;white-space:normal}
+@media(max-width:680px){.service-row{font-size:13px;gap:12px}.side-nav .nav-item{padding:10px;font-size:11px}}
