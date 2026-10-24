@@ -18,8 +18,11 @@ if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is required');
 if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.length < 32) throw new Error('SESSION_SECRET must be at least 32 characters');
 if (production && (!appOrigin || !/^https:\/\//.test(appOrigin))) throw new Error('APP_ORIGIN must be the production HTTPS origin');
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL.includes('localhost') ? false : { rejectUnauthorized: true },
+const localDatabase = /localhost|127\.0\.0\.1/.test(new URL(process.env.DATABASE_URL).hostname);
+const databaseUrl = new URL(process.env.DATABASE_URL);
+if (!localDatabase) databaseUrl.searchParams.set('sslmode', 'verify-full');
+const pool = new Pool({ connectionString: databaseUrl.toString(),
+  ssl: localDatabase ? false : { rejectUnauthorized: true },
   max: 10, idleTimeoutMillis: 30000, connectionTimeoutMillis: 5000, application_name: 'california-bank-api' });
 pool.on('error', e => console.error('Unexpected idle database error:', e.message));
 app.disable('x-powered-by');
@@ -29,6 +32,7 @@ app.use(helmet({ contentSecurityPolicy: { directives: {
   connectSrc:["'self'"], objectSrc:["'none'"], baseUri:["'self'"], frameAncestors:["'none'"],
   formAction:["'self'"], upgradeInsecureRequests: production ? [] : null
 }}, crossOriginEmbedderPolicy:false }));
+app.use('/api/webhooks/unit', express.raw({ type:['application/json','application/vnd.api+json'], limit:'1mb' }));
 app.use(express.json({ limit:'32kb', strict:true }));
 app.use((req,res,next) => {
   req.requestId = crypto.randomUUID(); res.setHeader('X-Request-Id',req.requestId);
@@ -116,10 +120,30 @@ app.post('/api/transfers',requireUser,requireCsrf,asyncRoute(async(req,res)=>{
   await audit(req.session.userId,'banking.transfer_blocked',req,{reason:'provider_program_not_enabled'});
   res.status(503).json({error:'BANKING_PROGRAM_NOT_READY',message:'Transfers are unavailable until the approved banking provider integration is enabled and verified.'});
 }));
-app.post('/api/webhooks/unit',(req,res)=>{
-  if(!process.env.UNIT_WEBHOOK_SECRET||process.env.UNIT_WEBHOOK_SECRET.length<32)return res.status(503).json({error:'WEBHOOK_VERIFICATION_NOT_CONFIGURED'});
-  return res.status(503).json({error:'WEBHOOK_ADAPTER_NOT_ENABLED'});
-});
+app.post('/api/webhooks/unit',asyncRoute(async(req,res)=>{
+  const secret=process.env.UNIT_WEBHOOK_SECRET;
+  if(!secret||secret.length<32)return res.status(503).json({error:'WEBHOOK_VERIFICATION_NOT_CONFIGURED'});
+  if(!Buffer.isBuffer(req.body))return res.status(400).json({error:'INVALID_WEBHOOK_BODY'});
+  const signature=req.get('x-unit-signature')||'';
+  const expected=crypto.createHmac('sha1',secret).update(req.body).digest();
+  let supplied;
+  try{supplied=Buffer.from(signature,'base64');}catch(_){return res.status(401).json({error:'INVALID_WEBHOOK_SIGNATURE'});}
+  if(supplied.length!==expected.length||!crypto.timingSafeEqual(supplied,expected))
+    return res.status(401).json({error:'INVALID_WEBHOOK_SIGNATURE'});
+  let event;
+  try{event=JSON.parse(req.body.toString('utf8'));}catch(_){return res.status(400).json({error:'INVALID_WEBHOOK_JSON'});}
+  const eventId=String(event.eventId||event.id||'').trim();
+  const eventType=String(event.type||event.eventType||event.attributes?.type||'').trim();
+  if(!eventId||!eventType||eventId.length>255||eventType.length>255)
+    return res.status(400).json({error:'WEBHOOK_EVENT_ID_AND_TYPE_REQUIRED'});
+  const saved=await pool.query(
+    'INSERT INTO provider_webhook_events(provider,provider_event_id,event_type) VALUES($1,$2,$3) ON CONFLICT(provider,provider_event_id) DO NOTHING RETURNING provider_event_id',
+    ['unit',eventId,eventType]);
+  if(saved.rowCount){
+    await audit(null,'provider.unit.webhook_received',req,{eventId,eventType});
+  }
+  res.status(200).json({received:true,duplicate:!saved.rowCount});
+}));
 app.use('/api',(req,res)=>res.status(404).json({error:'NOT_FOUND',requestId:req.requestId}));
 app.use(express.static(path.join(process.cwd(),'public'),{index:'index.html',maxAge:production?'1h':0,etag:true}));
 app.get('/{*path}',(_req,res)=>res.sendFile(path.join(process.cwd(),'public','index.html')));
