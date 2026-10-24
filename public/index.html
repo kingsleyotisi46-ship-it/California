@@ -51,12 +51,9 @@
 <div id="profile-page" class="page-panel" hidden>
 <div class="section-title"><div><p class="eyebrow">PERSONAL DETAILS</p><h2>My profile</h2></div></div>
 <div class="profile-card">
-<div class="profile-row"><span>Full name</span><strong id="profile-name">Not provided</strong></div>
-<div class="profile-row"><span>Email address</span><strong id="profile-email">—</strong></div>
-<div class="profile-row"><span>Phone number</span><strong id="profile-phone">Not provided</strong></div>
-<div class="profile-row"><span>Account number</span><strong id="profile-account-number">Not assigned</strong></div>
-<div class="profile-row"><span>Account status</span><strong id="profile-status">—</strong></div>
-<p class="field-help">You can update your personal details below. Your account number and email address are read-only.</p>
+<div class="avatar-editor"><img id="profile-avatar" alt="Your profile image" hidden><div id="avatar-placeholder" class="avatar-placeholder" aria-hidden="true">C</div><div><strong>Profile photo</strong><p class="field-help">PNG, JPEG or WebP, up to 1 MB.</p><label class="secondary upload-label" for="profile-image">Choose image</label><input id="profile-image" type="file" accept="image/png,image/jpeg,image/webp" hidden><button id="remove-profile-image" class="text-button" type="button">Remove photo</button></div></div>
+<div class="profile-row"><span>Account number</span><strong id="profile-account-number">Not assigned</strong></div><div class="profile-row"><span>Email address</span><strong id="profile-email">—</strong></div><div class="profile-row"><span>Account status</span><strong id="profile-status">—</strong></div>
+<form id="profile-form" class="edit-form"><div class="form-grid"><div><label for="edit-first-name">First name</label><input id="edit-first-name" maxlength="80" required></div><div><label for="edit-middle-name">Middle name <span class="optional">(optional)</span></label><input id="edit-middle-name" maxlength="80"></div></div><label for="edit-last-name">Last name</label><input id="edit-last-name" maxlength="80" required><label for="edit-phone-number">Phone number</label><input id="edit-phone-number" type="tel" maxlength="20" required><button class="primary-button" type="submit" id="save-profile">Save profile changes</button><p id="profile-notice" class="notice" role="status" aria-live="polite" hidden></p></form>
 </div></div>
 <div id="activity-page" class="page-panel" hidden>
 <div class="section-title"><div><p class="eyebrow">ACCOUNT HISTORY</p><h2>Activity</h2><p class="muted">Provider-confirmed transactions only.</p></div><button id="activity-refresh" class="refresh-button" type="button">Refresh activity</button></div>
