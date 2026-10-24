@@ -63,7 +63,7 @@ async function audit(userId,eventType,req,metadata={}){
   await pool.query('INSERT INTO security_audit_events(user_id,event_type,request_id,metadata) VALUES($1,$2,$3,$4)',
     [userId||null,eventType,req.requestId,JSON.stringify(metadata)]);
 }
-function publicUser(row){return{id:row.id,email:row.email,status:row.status,emailVerified:Boolean(row.email_verified_at)};}
+function publicUser(row){return{id:row.id,email:row.email,status:row.status,emailVerified:Boolean(row.email_verified_at),firstName:row.first_name||null,middleName:row.middle_name||null,lastName:row.last_name||null,phoneNumber:row.phone_number||null,accountNumber:row.account_number||null};}
 function rotateSession(req,userId){
   return new Promise((resolve,reject)=>req.session.regenerate(err=>{
     if(err)return reject(err);req.session.userId=userId;req.session.csrfToken=crypto.randomBytes(32).toString('base64url');resolve();
@@ -71,13 +71,37 @@ function rotateSession(req,userId){
 }
 app.get('/healthz',asyncRoute(async(_req,res)=>{await pool.query('SELECT 1');res.json({status:'ok',database:'ok'});}));
 app.get('/api/auth/csrf',(req,res)=>{res.setHeader('Cache-Control','no-store');res.json({csrfToken:csrf(req)});});
-const registerSchema=z.object({email:z.string().trim().email().max(254),password:z.string().min(12).max(128)}).strict();
+const registerSchema=z.object({
+  firstName:z.string().trim().min(1).max(80).regex(/^[\\p{L}\\p{M} .'-]+$/u),
+  middleName:z.string().trim().max(80).regex(/^[\\p{L}\\p{M} .'-]*$/u).optional().default(''),
+  lastName:z.string().trim().min(1).max(80).regex(/^[\\p{L}\\p{M} .'-]+$/u),
+  email:z.string().trim().email().max(254),
+  phoneNumber:z.string().trim().min(7).max(20).regex(/^\\+?[0-9 ()-]+$/),
+  password:z.string().min(12).max(128),
+  confirmPassword:z.string().min(12).max(128),
+  termsAccepted:z.literal(true)
+}).strict().superRefine((v,ctx)=>{if(v.password!==v.confirmPassword)ctx.addIssue({code:z.ZodIssueCode.custom,path:['confirmPassword'],message:'Passwords do not match'});});
 app.post('/api/auth/register',authLimiter,requireCsrf,asyncRoute(async(req,res)=>{
   const input=registerSchema.parse(req.body),email=input.email.toLowerCase();
   const hash=await argon2.hash(input.password,{type:argon2.argon2id,memoryCost:19456,timeCost:2,parallelism:1});
   let user;
-  try{user=(await pool.query('INSERT INTO app_users(email,password_hash) VALUES($1,$2) RETURNING id,email,status,email_verified_at',[email,hash])).rows[0];}
-  catch(e){if(e.code==='23505')return res.status(409).json({error:'ACCOUNT_ALREADY_EXISTS'});throw e;}
+  for(let attempt=0;attempt<8;attempt++){
+    const accountNumber=String(crypto.randomInt(10000000000,100000000000));
+    try{
+      user=(await pool.query(
+        'INSERT INTO app_users(email,password_hash,first_name,middle_name,last_name,phone_number,terms_accepted_at,account_number) VALUES($1,$2,$3,$4,$5,$6,now(),$7) RETURNING id,email,status,email_verified_at,first_name,middle_name,last_name,phone_number,account_number',
+        [email,hash,input.firstName,input.middleName||null,input.lastName,input.phoneNumber,accountNumber]
+      )).rows[0];
+      break;
+    }catch(e){
+      if(e.code==='23505'){
+        if(e.constraint==='app_users_email_unique'||String(e.constraint||'').includes('email'))return res.status(409).json({error:'ACCOUNT_ALREADY_EXISTS'});
+        if(String(e.constraint||'').includes('account_number'))continue;
+      }
+      throw e;
+    }
+  }
+  if(!user)throw new Error('Unable to allocate a unique account number');
   await rotateSession(req,user.id);await audit(user.id,'auth.register',req);
   res.status(201).setHeader('Cache-Control','no-store').json({user:publicUser(user),csrfToken:req.session.csrfToken});
 }));
@@ -91,7 +115,7 @@ app.post('/api/auth/login',authLimiter,requireCsrf,asyncRoute(async(req,res)=>{
   res.setHeader('Cache-Control','no-store').json({user:publicUser(user),csrfToken:req.session.csrfToken});
 }));
 app.get('/api/auth/me',requireUser,asyncRoute(async(req,res)=>{
-  const result=await pool.query('SELECT id,email,status,email_verified_at FROM app_users WHERE id=$1',[req.session.userId]);
+  const result=await pool.query('SELECT id,email,status,email_verified_at,first_name,middle_name,last_name,phone_number,account_number FROM app_users WHERE id=$1',[req.session.userId]);
   if(!result.rowCount||result.rows[0].status!=='active')return req.session.destroy(()=>res.status(401).json({error:'AUTHENTICATION_REQUIRED'}));
   res.setHeader('Cache-Control','no-store').json({user:publicUser(result.rows[0]),csrfToken:csrf(req)});
 }));

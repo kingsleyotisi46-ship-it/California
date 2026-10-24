@@ -23,7 +23,18 @@
 <section id="auth-view" class="auth-card" aria-labelledby="auth-title">
 <div class="auth-art" aria-hidden="true"><div class="art-orbit orbit-one"></div><div class="art-orbit orbit-two"></div><div class="art-monogram">C</div></div>
 <div class="auth-content"><p class="eyebrow">ACCOUNT ACCESS</p><h2 id="auth-title">Welcome back</h2><p class="muted">Sign in to securely access your account.</p><div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
-<form id="auth-form"><label for="email">Email address</label><input id="email" name="email" type="email" autocomplete="email" maxlength="254" required><label for="password">Password</label><input id="password" name="password" type="password" autocomplete="current-password" minlength="12" maxlength="128" required><button id="submit" type="submit">Sign in securely <span aria-hidden="true">→</span></button></form>
+<form id="auth-form" novalidate>
+<div id="profile-fields" class="profile-fields" hidden>
+<div class="form-grid"><div><label for="first-name">First name</label><input id="first-name" name="firstName" autocomplete="given-name" maxlength="80"></div><div><label for="middle-name">Middle name <span class="optional">(optional)</span></label><input id="middle-name" name="middleName" autocomplete="additional-name" maxlength="80"></div></div>
+<label for="last-name">Last name</label><input id="last-name" name="lastName" autocomplete="family-name" maxlength="80">
+<label for="phone-number">Phone number</label><input id="phone-number" name="phoneNumber" type="tel" autocomplete="tel" maxlength="20">
+</div>
+<label for="email">Email address</label><input id="email" name="email" type="email" autocomplete="email" maxlength="254" required>
+<label for="password">Password</label><input id="password" name="password" type="password" autocomplete="current-password" minlength="12" maxlength="128" required aria-describedby="password-help">
+<p id="password-help" class="field-help">Use at least 12 characters.</p>
+<div id="confirm-field" hidden><label for="confirm-password">Confirm password</label><input id="confirm-password" name="confirmPassword" type="password" autocomplete="new-password" minlength="12" maxlength="128"></div>
+<div id="terms-field" class="terms-field" hidden><label class="terms-label"><input id="terms-accepted" name="termsAccepted" type="checkbox"><span>I have read and accept the <a href="/terms.html" target="_blank" rel="noopener noreferrer">Terms of Service</a> and <a href="/privacy.html" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.</span></label></div>
+<button id="submit" type="submit">Sign in securely <span aria-hidden="true">→</span></button></form>
 <p class="switch">New to California Bank? <button id="toggle-mode" class="text-button" type="button">Create an account</button></p></div>
 </section>
 <section id="account-view" hidden>
