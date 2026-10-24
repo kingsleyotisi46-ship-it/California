@@ -1,10 +1,42 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b1b35"><meta name="description" content="California Bank secure online banking access."><title>California Bank</title><link rel="stylesheet" href="/styles.css"><script src="/app.js" defer></script></head>
-<body><main class="shell"><header class="brand"><span class="mark" aria-hidden="true">C</span><span><strong>CALIFORNIA BANK</strong><small>Secure online banking</small></span></header>
-<section id="auth-view" class="auth-card" aria-labelledby="auth-title"><p class="eyebrow">ACCOUNT ACCESS</p><h1 id="auth-title">Welcome back</h1><p class="muted">Sign in to securely access your account.</p><div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
-<form id="auth-form"><label for="email">Email address</label><input id="email" name="email" type="email" autocomplete="email" maxlength="254" required><label for="password">Password</label><input id="password" name="password" type="password" autocomplete="current-password" minlength="12" maxlength="128" required><button id="submit" type="submit">Sign in securely</button></form>
-<p class="switch">New to California Bank? <button id="toggle-mode" class="text-button" type="button">Create an account</button></p></section>
-<section id="account-view" class="account-card" hidden><div class="account-top"><div><p class="eyebrow">ACCOUNT OVERVIEW</p><h1>Your banking</h1></div><button id="logout" class="secondary" type="button">Sign out</button></div><p id="account-email" class="muted"></p>
-<div class="status-panel"><span class="status-dot"></span><div><strong id="bank-status-title">Banking setup pending</strong><p id="bank-status-text">Banking services appear after provider onboarding is approved.</p></div></div>
-<h2>Accounts</h2><div id="accounts" class="empty">No provider-linked accounts are available yet.</div><div class="section-heading"><h2>Recent transactions</h2><button id="refresh" class="text-button" type="button">Refresh</button></div><div id="transactions" class="empty">No provider-confirmed transactions available.</div>
-<p class="footnote">Balances and transactions are shown only when received from the banking provider. No sample balances or simulated transfers are displayed.</p></section><footer>California Bank · Secure access · USD accounts</footer></main></body></html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0b1b35">
+<meta name="description" content="California Bank secure online banking access.">
+<title>California Bank</title>
+<link rel="stylesheet" href="/styles.css">
+<script src="/app.js" defer></script>
+</head>
+<body>
+<div class="app-shell">
+<aside class="sidebar" aria-label="Main navigation">
+<a class="brand" href="/" aria-label="California Bank home"><span class="brand-mark" aria-hidden="true">C</span><span><strong>CALIFORNIA</strong><small>BANK</small></span></a>
+<div class="sidebar-caption">YOUR MONEY</div>
+<div class="nav-item nav-active"><span aria-hidden="true">▦</span> Overview</div>
+<div class="sidebar-note"><span class="secure-icon" aria-hidden="true">✓</span><div><strong>Secure banking</strong><p>Your access is protected with encrypted sessions.</p></div></div>
+<div class="sidebar-bottom">USD · United States<br><span>California Bank secure access</span></div>
+</aside>
+<main class="main-content">
+<header class="topbar"><div><p class="eyebrow">PERSONAL BANKING</p><h1>Welcome to your dashboard</h1><p class="subtitle">A clear view of your California Bank account activity.</p></div><button id="logout" class="secondary" type="button">Sign out <span aria-hidden="true">↗</span></button></header>
+<section id="auth-view" class="auth-card" aria-labelledby="auth-title">
+<div class="auth-art" aria-hidden="true"><div class="art-orbit orbit-one"></div><div class="art-orbit orbit-two"></div><div class="art-monogram">C</div></div>
+<div class="auth-content"><p class="eyebrow">ACCOUNT ACCESS</p><h2 id="auth-title">Welcome back</h2><p class="muted">Sign in to securely access your account.</p><div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+<form id="auth-form"><label for="email">Email address</label><input id="email" name="email" type="email" autocomplete="email" maxlength="254" required><label for="password">Password</label><input id="password" name="password" type="password" autocomplete="current-password" minlength="12" maxlength="128" required><button id="submit" type="submit">Sign in securely <span aria-hidden="true">→</span></button></form>
+<p class="switch">New to California Bank? <button id="toggle-mode" class="text-button" type="button">Create an account</button></p></div>
+</section>
+<section id="account-view" hidden>
+<div class="welcome-row"><div><p class="eyebrow">ACCOUNT OVERVIEW</p><h2>Your banking</h2><p id="account-email" class="muted email-line"></p></div><div class="secure-pill"><span class="secure-icon">✓</span> Secure session</div></div>
+<div class="status-panel"><div class="status-icon" aria-hidden="true">◷</div><div class="status-copy"><div class="status-heading"><strong id="bank-status-title">Banking setup pending</strong><span id="bank-status-badge" class="status-badge">PENDING</span></div><p id="bank-status-text">Banking services appear after provider onboarding is approved.</p></div></div>
+<div class="section-title"><div><p class="eyebrow">YOUR PRODUCTS</p><h3>Accounts</h3></div><span class="section-meta" id="account-count">0 linked</span></div>
+<div id="accounts" class="accounts-grid"><div class="empty">No provider-linked accounts are available yet.</div></div>
+<div class="section-title transactions-title"><div><p class="eyebrow">LATEST ACTIVITY</p><h3>Recent transactions</h3></div><button id="refresh" class="refresh-button" type="button"><span aria-hidden="true">↻</span> Refresh</button></div>
+<div id="transactions" class="transactions-card"><div class="empty">No provider-confirmed transactions available.</div></div>
+<p class="footnote"><span aria-hidden="true">ⓘ</span> Balances and transactions are displayed only when confirmed by the banking provider. No sample balances or simulated transfers are shown.</p>
+</section>
+<footer><span>© California Bank</span><span>Secure access <i aria-hidden="true">·</i> USD accounts</span></footer>
+</main>
+</div>
+</body>
+</html>
