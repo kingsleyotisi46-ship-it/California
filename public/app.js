@@ -61,6 +61,8 @@ async function loadAccount(){
  authView.hidden=true;accountView.hidden=false;logout.hidden=false;
  $('#account-email').textContent=user.email;
  $('#profile-name').textContent=[user.firstName,user.middleName,user.lastName].filter(Boolean).join(' ')||'Not provided';
+ $('#edit-first-name').value=user.firstName||'';$('#edit-middle-name').value=user.middleName||'';$('#edit-last-name').value=user.lastName||'';$('#edit-phone-number').value=user.phoneNumber||'';
+ renderProfileImage(user.profileImage);
  $('#profile-email').textContent=user.email||'—';
  $('#profile-phone').textContent=user.phoneNumber||'Not provided';
  $('#profile-account-number').textContent=user.accountNumber||'Not assigned';
@@ -90,6 +92,33 @@ form.addEventListener('submit',async e=>{
   showNotice(err.status===409?'An account with this email already exists. Sign in instead.':err.status===401?'Email or password is incorrect.':err.status===400?'Check your details, make sure passwords match, and use at least 12 password characters.':'We could not complete this request. Please try again.',true);
  }finally{button.disabled=false;}
 });
+
+function renderProfileImage(image){
+ const img=$('#profile-avatar'),placeholder=$('#avatar-placeholder');
+ if(!img||!placeholder)return;
+ if(image){img.src=image;img.hidden=false;placeholder.hidden=true;}else{img.removeAttribute('src');img.hidden=true;placeholder.hidden=false;}
+}
+function profileNotice(message,error=false){const el=$('#profile-notice');if(!el)return;el.hidden=!message;el.textContent=message||'';el.classList.toggle('error',error);}
+$('#profile-form').addEventListener('submit',async e=>{
+ e.preventDefault();const button=$('#save-profile');button.disabled=true;profileNotice('');
+ try{
+  const result=await api('/api/profile',{method:'PATCH',body:JSON.stringify({firstName:$('#edit-first-name').value.trim(),middleName:$('#edit-middle-name').value.trim(),lastName:$('#edit-last-name').value.trim(),phoneNumber:$('#edit-phone-number').value.trim()})});
+  currentUser=result.user;$('#profile-name').textContent=[currentUser.firstName,currentUser.middleName,currentUser.lastName].filter(Boolean).join(' ');$('#profile-phone').textContent=currentUser.phoneNumber||'Not provided';profileNotice('Profile details saved.');
+ }catch(_){profileNotice('Could not save profile details. Check the fields and try again.',true);}
+ finally{button.disabled=false;}
+});
+$('#profile-image').addEventListener('change',async e=>{
+ const file=e.target.files?.[0];if(!file)return;
+ if(!['image/png','image/jpeg','image/webp'].includes(file.type)||file.size>1024*1024){profileNotice('Choose a PNG, JPEG, or WebP image smaller than 1 MB.',true);e.target.value='';return;}
+ const reader=new FileReader();
+ reader.onload=async()=>{try{const result=await api('/api/profile/image',{method:'PUT',body:JSON.stringify({image:reader.result})});currentUser=result.user;renderProfileImage(currentUser.profileImage);profileNotice('Profile photo updated.');}catch(_){profileNotice('Could not save this image. Try another image.',true);}finally{e.target.value='';}};
+ reader.onerror=()=>profileNotice('Could not read this image file.',true);reader.readAsDataURL(file);
+});
+$('#remove-profile-image').addEventListener('click',async()=>{
+ try{const result=await api('/api/profile/image',{method:'PUT',body:JSON.stringify({image:null})});currentUser=result.user;renderProfileImage(null);profileNotice('Profile photo removed.');}
+ catch(_){profileNotice('Could not remove the profile photo. Try again.',true);}
+});
+
 document.querySelectorAll('[data-page]').forEach(btn=>btn.addEventListener('click',async()=>{
  if(!currentUser)return;
  showPage(btn.dataset.page);
