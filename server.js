@@ -130,19 +130,22 @@ app.post('/api/webhooks/unit',asyncRoute(async(req,res)=>{
   try{supplied=Buffer.from(signature,'base64');}catch(_){return res.status(401).json({error:'INVALID_WEBHOOK_SIGNATURE'});}
   if(supplied.length!==expected.length||!crypto.timingSafeEqual(supplied,expected))
     return res.status(401).json({error:'INVALID_WEBHOOK_SIGNATURE'});
-  let event;
-  try{event=JSON.parse(req.body.toString('utf8'));}catch(_){return res.status(400).json({error:'INVALID_WEBHOOK_JSON'});}
-  const eventId=String(event.eventId||event.id||'').trim();
-  const eventType=String(event.type||event.eventType||event.attributes?.type||'').trim();
-  if(!eventId||!eventType||eventId.length>255||eventType.length>255)
-    return res.status(400).json({error:'WEBHOOK_EVENT_ID_AND_TYPE_REQUIRED'});
-  const saved=await pool.query(
-    'INSERT INTO provider_webhook_events(provider,provider_event_id,event_type) VALUES($1,$2,$3) ON CONFLICT(provider,provider_event_id) DO NOTHING RETURNING provider_event_id',
-    ['unit',eventId,eventType]);
-  if(saved.rowCount){
-    await audit(null,'provider.unit.webhook_received',req,{eventId,eventType});
+  let payload;
+  try{payload=JSON.parse(req.body.toString('utf8'));}catch(_){return res.status(400).json({error:'INVALID_WEBHOOK_JSON'});}
+  const events=Array.isArray(payload.data)?payload.data:(payload.data?[payload.data]:[]);
+  if(!events.length||events.length>64)return res.status(400).json({error:'INVALID_WEBHOOK_EVENTS'});
+  let accepted=0,duplicates=0;
+  for(const event of events){
+    const eventId=String(event.id||'').trim(),eventType=String(event.type||'').trim();
+    if(!eventId||!eventType||eventId.length>255||eventType.length>255)
+      return res.status(400).json({error:'WEBHOOK_EVENT_ID_AND_TYPE_REQUIRED'});
+    const saved=await pool.query(
+      'INSERT INTO provider_webhook_events(provider,provider_event_id,event_type) VALUES($1,$2,$3) ON CONFLICT(provider,provider_event_id) DO NOTHING RETURNING provider_event_id',
+      ['unit',eventId,eventType]);
+    if(saved.rowCount){accepted++;await audit(null,'provider.unit.webhook_received',req,{eventId,eventType});}
+    else duplicates++;
   }
-  res.status(200).json({received:true,duplicate:!saved.rowCount});
+  res.status(200).json({received:true,accepted,duplicates});
 }));
 app.use('/api',(req,res)=>res.status(404).json({error:'NOT_FOUND',requestId:req.requestId}));
 app.use(express.static(path.join(process.cwd(),'public'),{index:'index.html',maxAge:production?'1h':0,etag:true}));
